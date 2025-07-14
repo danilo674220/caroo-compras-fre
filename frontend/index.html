@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pedidos App</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .cart-icon {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #667eea;
+      color: white;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pedidos App</h1>
+    <div class="cart-icon" onclick="toggleCarrito()">🛒</div>
+  </header>
+  <main class="container">
+    <section id="loginSection" class="card">
+      <h2>Login</h2>
+      <input id="user" placeholder="Usuario" />
+      <input id="pass" type="password" placeholder="Contraseña" />
+      <button onclick="login()">Ingresar</button>
+    </section>
+
+    <section id="catalogoSection" class="card hidden">
+      <h2>Catálogo de Productos</h2>
+      <div id="catalogo"></div>
+    </section>
+
+    <section id="carritoSection" class="card hidden" style="position: fixed; top: 70px; right: 10px; width: 300px; max-height: 80%; overflow-y: auto;">
+      <h2>Carrito de Compras</h2>
+      <div id="carrito"></div>
+      <div class="resumen" id="resumen"></div>
+      <button onclick="realizarPedido()">Realizar Pedido</button>
+    </section>
+  </main>
+
+  <script>
+    let carrito = [];
+    let usuario = '';
+
+    function login() {
+      const username = document.getElementById('user').value;
+      const password = document.getElementById('pass').value;
+      fetch('http://localhost:3000/api/login', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username, password })
+      })
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(() => {
+        usuario = username;
+        document.getElementById('loginSection').classList.add('hidden');
+        document.getElementById('catalogoSection').classList.remove('hidden');
+        cargarCatalogo();
+      })
+      .catch(() => alert('Login fallido'));
+    }
+
+    function cargarCatalogo() {
+      fetch('http://localhost:3000/api/products')
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('catalogo').innerHTML = data.map(p => `
+          <div class="product-card">
+            <img src="https://www.impacto.com.pe/storage/products/1606412858RVLTXCBORQRCTHM.1.jpg" alt="${p.name}" style="width:50%; border-radius:8px; margin-bottom:8px;">
+            <div style="margin-bottom:8px; font-weight:bold;">${p.name} - S/${p.price} (Stock: ${p.stock})</div>
+            <input type="number" id="qty_${p.id}" min="1" max="${p.stock}" value="1">
+            <button onclick="agregar(${p.id}, '${p.name}', ${p.price}, ${p.stock})">Agregar</button>
+          </div>
+        `).join('');
+      });
+    }
+
+    function agregar(id, name, price, stock) {
+      const qty = parseInt(document.getElementById(`qty_${id}`).value);
+      if (qty > stock) return alert('Excede el stock disponible');
+      const item = carrito.find(i => i.id == id);
+      if (item) item.cantidad += qty;
+      else carrito.push({ id, name, price, cantidad: qty });
+      mostrarCarrito();
+    }
+
+    function mostrarCarrito() {
+      document.getElementById('carrito').innerHTML = carrito.map(i => `
+        <div class="product-card">
+          <div style="margin-bottom:8px;">${i.name} x ${i.cantidad} = S/${i.price * i.cantidad}</div>
+          <button onclick="quitar(${i.id})">Quitar</button>
+        </div>
+      `).join('');
+      const subtotal = carrito.reduce((a,b)=>a+b.price*b.cantidad,0);
+      const igv = subtotal * 0.18;
+      const total = subtotal + igv;
+      document.getElementById('resumen').innerText = `Sub: S/${subtotal} | IGV: S/${igv.toFixed(2)} | Total: S/${total.toFixed(2)}`;
+    }
+
+    function quitar(id) {
+      carrito = carrito.filter(i => i.id != id);
+      mostrarCarrito();
+    }
+
+    function realizarPedido() {
+      if (!carrito.length) return alert('Carrito vacío');
+      fetch('http://localhost:3000/api/pedidos', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ cliente: usuario, items: carrito })
+      })
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(() => {
+        alert('Pedido realizado');
+        carrito = [];
+        mostrarCarrito();
+        cargarCatalogo();
+      })
+      .catch(() => alert('Error al crear pedido'));
+    }
+
+    function toggleCarrito() {
+      const carritoSection = document.getElementById('carritoSection');
+      carritoSection.classList.toggle('hidden');
+    }
+  </script>
+</body>
+</html>

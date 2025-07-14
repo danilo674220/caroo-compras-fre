@@ -1,0 +1,28 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #1e1e2f;
+  color: #f0f0f0;
+}
+header { text-align: center; padding: 1rem; background: #282a36; color: #f8f8f2; }
+.container { max-width: 800px; margin: 40px auto; padding: 20px; }
+.card {
+  background: #2d2f3b; border-radius: 10px; padding: 20px; margin-bottom: 20px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  animation: fadeIn 0.8s ease;
+}
+.product-card { background: #44475a; border-radius: 6px; padding: 10px; margin: 10px 0; text-align: center; }
+.product-card img { max-width: 100%; border-radius: 4px; margin-bottom: 5px; }
+input, button {
+  width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px;
+  border: none; outline: none;
+}
+button {
+  background: #6272a4; color: white; cursor: pointer; transition: transform 0.2s, background 0.3s;
+}
+button:hover { transform: scale(1.05); background: #7085b6; }
+.hidden { display: none; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
